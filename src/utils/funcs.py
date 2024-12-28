@@ -36,6 +36,7 @@ def IoUfrom2bboxes(boxA, boxB):
 
 
 
+# margin=False,crop_by_bbox=True,abs_coord=True,phase=self.phase
 def crop_face(img,landmark=None,bbox=None,margin=False,crop_by_bbox=True,abs_coord=False,only_img=False,phase='train'):
 	assert phase in ['train','val','test']
 
@@ -46,6 +47,7 @@ def crop_face(img,landmark=None,bbox=None,margin=False,crop_by_bbox=True,abs_coo
 
 	H,W=len(img),len(img[0])
 	
+	# 第二次crop
 	if crop_by_bbox:
 		x0,y0=bbox[0]
 		x1,y1=bbox[1]
@@ -55,6 +57,7 @@ def crop_face(img,landmark=None,bbox=None,margin=False,crop_by_bbox=True,abs_coo
 		w1_margin=w/4
 		h0_margin=h/4#0#np.random.rand()*(h/5)
 		h1_margin=h/4
+	# 第一次crop
 	else:
 		x0,y0=landmark[:68,0].min(),landmark[:68,1].min()
 		x1,y1=landmark[:68,0].max(),landmark[:68,1].max()
@@ -67,6 +70,7 @@ def crop_face(img,landmark=None,bbox=None,margin=False,crop_by_bbox=True,abs_coo
 
 	
 
+	# 第二次crop
 	if margin:
 		w0_margin*=4
 		w1_margin*=4

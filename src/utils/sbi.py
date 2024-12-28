@@ -38,13 +38,19 @@ class SBI_Dataset(Dataset):
 		image_list,label_list=init_ff(phase,'frame',n_frames=n_frames)
 		
 		path_lm='/landmarks/' 
+		# 检查数据集的完整性，TODO：数据集各部分含义
 		label_list=[label_list[i] for i in range(len(image_list)) if os.path.isfile(image_list[i].replace('/frames/',path_lm).replace('.png','.npy')) and os.path.isfile(image_list[i].replace('/frames/','/retina/').replace('.png','.npy'))]
 		image_list=[image_list[i] for i in range(len(image_list)) if os.path.isfile(image_list[i].replace('/frames/',path_lm).replace('.png','.npy')) and os.path.isfile(image_list[i].replace('/frames/','/retina/').replace('.png','.npy'))]
 		self.path_lm=path_lm
 		print(f'SBI({phase}): {len(image_list)}')
 	
 
+		# image_list = ['/dataset/FaceForensics++/original_sequences/youtube/raw/frames/039/353.png', '/dataset/FaceForensics++/original_sequences/youtube/raw/frames/039/431.png', '/dataset/FaceForensics++/original_sequences/youtube/raw/frames/039/529.png', '/dataset/FaceForensics++/original_sequences/youtube/raw/frames/039/608.png']
+
 		self.image_list=image_list
+
+		# print(self.image_list[172:176])
+		# exit()
 
 		self.image_size=(image_size,image_size)
 		self.phase=phase
@@ -63,8 +69,11 @@ class SBI_Dataset(Dataset):
 			try:
 				filename=self.image_list[idx]
 				img=np.array(Image.open(filename))
+				img_org = img
 				landmark=np.load(filename.replace('.png','.npy').replace('/frames/',self.path_lm))[0]
+				# landmark的矩形包围
 				bbox_lm=np.array([landmark[:,0].min(),landmark[:,1].min(),landmark[:,0].max(),landmark[:,1].max()])
+				# 
 				bboxes=np.load(filename.replace('.png','.npy').replace('/frames/','/retina/'))[:2]
 				iou_max=-1
 				for i in range(len(bboxes)):
@@ -78,6 +87,8 @@ class SBI_Dataset(Dataset):
 					if np.random.rand()<0.5:
 						img,_,landmark,bbox=self.hflip(img,None,landmark,bbox)
 						
+				bbox_0_org = bbox
+				# 第一次crop
 				img,landmark,bbox,__=crop_face(img,landmark,bbox,margin=True,crop_by_bbox=False)
 
 				img_r,img_f,mask_f=self.self_blending(img.copy(),landmark.copy())
@@ -88,12 +99,53 @@ class SBI_Dataset(Dataset):
 					img_r=transformed['image1']
 					
 				
+				bbox_org = bbox
+				img_f_org = img_f
 				img_f,_,__,___,y0_new,y1_new,x0_new,x1_new=crop_face(img_f,landmark,bbox,margin=False,crop_by_bbox=True,abs_coord=True,phase=self.phase)
+				# img_f_log,_,__,___,y0_new,y1_new,x0_new,x1_new=crop_face(img_f,landmark,bbox,margin=False,crop_by_bbox=True,abs_coord=True,phase=self.phase)
 				
+				img_r_org = img_r
 				img_r=img_r[y0_new:y1_new,x0_new:x1_new]
+				# img_r_log=img_r[y0_new:y1_new,x0_new:x1_new]
 				
-				img_f=cv2.resize(img_f,self.image_size,interpolation=cv2.INTER_LINEAR).astype('float32')/255
-				img_r=cv2.resize(img_r,self.image_size,interpolation=cv2.INTER_LINEAR).astype('float32')/255
+				# print(img_f.shape)
+				# print(x0_new, x1_new, y0_new, y1_new)
+
+				try:
+					img_f=cv2.resize(img_f,self.image_size,interpolation=cv2.INTER_LINEAR).astype('float32')/255
+					img_r=cv2.resize(img_r,self.image_size,interpolation=cv2.INTER_LINEAR).astype('float32')/255
+					# print("original bbox ", bbox_0_org[0][0], bbox_0_org[1][0], bbox_0_org[0][1], bbox_0_org[1][1])
+					# print("old bbox: ", bbox_org[0][0], bbox_org[1][0], bbox_org[0][1], bbox_org[1][1])
+				# /dataset/FaceForensics++/original_sequences/youtube/raw/frames/604/106.png
+				except Exception as e:
+					# print(e)
+					# break
+					# print(img_f.shape)
+					print(f"{idx}--{filename} error!!!")
+					print("original image sz: ", img_org.shape)
+					print("first crop img size: ", img.shape)
+					print("original bbox ", bbox_0_org[0][0], bbox_0_org[1][0], bbox_0_org[0][1], bbox_0_org[1][1])
+					print("old bbox: ", bbox_org[0][0], bbox_org[1][0], bbox_org[0][1], bbox_org[1][1])
+					print("new bbox: ", x0_new, x1_new, y0_new, y1_new)
+					print("imgf origin sz: ", img_f_org.shape)
+					print("imgr origin sz: ", img_r_org.shape)
+					# print(bbox)
+					# print(bbox.shape)
+					# print(bboxes)
+					# print(bboxes.shape)
+					# print(landmark)
+					# print(img_f_log.shape)
+					# print(img_r_log.shape)
+					# print()
+					# print(img_r.shape)
+					# print(img_f)
+					Image.fromarray(img_f).save(f'/home/chenyuheng/SelfBlendedImages/debug/{idx}_fake.png')
+					Image.fromarray(img_r).save(f'/home/chenyuheng/SelfBlendedImages/debug/{idx}_real.png')
+					print(type(img_f))
+					print(f"{idx}--{filename} error!!!")
+					print(f"the error message is {str(e)}")
+					pass
+
 				
 
 				img_f=img_f.transpose((2,0,1))

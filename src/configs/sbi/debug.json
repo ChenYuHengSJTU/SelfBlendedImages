@@ -1,6 +1,6 @@
 
 {
-    "epoch":100,
+    "epoch":1,
     "batch_size":32,
     "image_size":380
 }

@@ -6,5 +6,8 @@
 *.dat
 *.txt
 *.h5
-
-
+*.mp4
+output_t7v2t1/
+output/
+dockerfiles/
+*.zip

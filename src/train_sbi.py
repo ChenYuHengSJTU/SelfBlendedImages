@@ -17,12 +17,23 @@ from datetime import datetime
 from tqdm import tqdm
 from model import Detector
 
+import sys
+sys.path.append('/home/chenyuheng/SelfBlendedImages/src/utils/')
+sys.path.append('/home/chenyuheng/SelfBlendedImages')
+sys.path.append('/home/chenyuheng/SelfBlendedImages/src/')
+
 def compute_accuray(pred,true):
     pred_idx=pred.argmax(dim=1).cpu().data.numpy()
     tmp=pred_idx==true.cpu().numpy()
     return sum(tmp)/len(pred_idx)
 
 def main(args):
+    
+    print(torch.cuda.device_count())
+    print(torch.cuda.current_device())
+    # torch.cuda.set_device(1)
+    # print(torch.cuda.current_device())
+
     cfg=load_json(args.config)
 
     seed=5
@@ -41,8 +52,10 @@ def main(args):
     train_dataset=SBI_Dataset(phase='train',image_size=image_size)
     val_dataset=SBI_Dataset(phase='val',image_size=image_size)
    
+    #TODO collate_fn & worker_init_fn
     train_loader=torch.utils.data.DataLoader(train_dataset,
                         batch_size=batch_size//2,
+                        # shuffle=False,
                         shuffle=True,
                         collate_fn=train_dataset.collate_fn,
                         num_workers=4,
@@ -61,7 +74,8 @@ def main(args):
     
     model=Detector()
     
-    model=model.to('cuda')
+    # model=model.to('cuda')
+    model=model.cuda(0)
     
     
 
@@ -141,6 +155,8 @@ def main(args):
         val_losses.append(val_loss/len(val_loader))
         val_accs.append(val_acc/len(val_loader))
         val_auc=roc_auc_score(target_dict,output_dict)
+        
+        #TODO AUC的含义和计算
         log_text+="val loss: {:.4f}, val acc: {:.4f}, val auc: {:.4f}".format(
                         val_loss/len(val_loader),
                         val_acc/len(val_loader),

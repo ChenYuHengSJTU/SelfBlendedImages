@@ -22,7 +22,7 @@ def facecrop(org_path,save_path,face_detector,face_predictor,period=1,num_frames
     frame_count_org = int(cap_org.get(cv2.CAP_PROP_FRAME_COUNT))
 
     
-    frame_idxs = np.linspace(0, frame_count_org - 1, num_frames, endpoint=True, dtype=np.int)
+    frame_idxs = np.linspace(0, frame_count_org - 1, num_frames, endpoint=True, dtype=int)
     for cnt_frame in range(frame_count_org): 
         ret_org, frame_org = cap_org.read()
         height,width=frame_org.shape[:-1]
@@ -79,8 +79,10 @@ if __name__=='__main__':
     parser.add_argument('-c',dest='comp',choices=['raw','c23','c40'],default='raw')
     parser.add_argument('-n',dest='num_frames',type=int,default=32)
     args=parser.parse_args()
+
     if args.dataset=='Original':
-        dataset_path='data/FaceForensics++/original_sequences/youtube/{}/'.format(args.comp)
+        dataset_path='/dataset/FaceForensics++/original_sequences/youtube/{}/'.format(args.comp)
+
     elif args.dataset=='DeepFakeDetection_original':
         dataset_path='data/FaceForensics++/original_sequences/actors/{}/'.format(args.comp)
     elif args.dataset in ['DeepFakeDetection','FaceShifter','Face2Face','Deepfakes','FaceSwap','NeuralTextures']:
